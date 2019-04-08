@@ -2,7 +2,7 @@
 library(BiocGenerics)
 library(dplyr)
 
-# set info
+# settings
 path = "/mnt/d/RNASeq/samples/chrX_data/chrX_data/HISAT/ballgown"
 output_name = "output"
 chr = "chrX"
