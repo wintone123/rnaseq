@@ -1,15 +1,19 @@
 # library
 library(BiocGenerics)
 library(dplyr)
+library(tidyr)
 
 # settings
 path = "/mnt/d/RNASeq/samples/chrX_data/chrX_data/HISAT/ballgown"
-output_name = "output"
+para_csv = "para.csv"
+output_csv = "output.csv"
 chr = "chrX"
 
-# load path
+# load info
 cat("------------loading path------------", "\n")
 dic_list <- list.dirs(path)
+para_df <- read.csv(file.path(path, para_csv))
+para_df <- unite(para_df, "name", c(2:ncol(para_df)), sep = "_")
 
 # process
 cat("-------------loop start-------------", "\n")
@@ -21,7 +25,7 @@ for(i in 2:length(dic_list)) {
     # load gft
     gtf_temp <- rtracklayer::import.gff2(file.path(path, gtf_name, paste0(gtf_name, ".gtf")))
     
-    # filtering
+    # arrange
     gtf_temp <- gtf_temp[gtf_temp@seqnames == chr]
     gtf_temp <- gtf_temp[order(start(gtf_temp))]
     # cat(length(gtf_temp), "\n")
@@ -36,11 +40,12 @@ for(i in 2:length(dic_list)) {
         gtf_df$FPKM <- gtf_temp$FPKM
         gtf_df$TPM <- gtf_temp$TPM
     }
-    # colnames(gtf_df)[which(colnames(gtf_df)=="cov")] <- paste0("cov", "_", gtf_name)
+    name <- filter(para_df, ids == gtf_name)$name
+    # colnames(gtf_df)[which(colnames(gtf_df)=="cov")] <- paste0("cov", "_", name)
     # gtf_df$cov <- NULL
-    colnames(gtf_df)[which(colnames(gtf_df)=="FPKM")] <- paste0("FPKM", "_", gtf_name)
+    colnames(gtf_df)[which(colnames(gtf_df)=="FPKM")] <- paste0("FPKM", "_", name)
     gtf_df$FPKM <- NULL
-    colnames(gtf_df)[which(colnames(gtf_df)=="TPM")] <- paste0("TPM", "_", gtf_name)
+    colnames(gtf_df)[which(colnames(gtf_df)=="TPM")] <- paste0("TPM", "_", name)
     gtf_df$TPM <- NULL
 }
 cat("--------------loop end--------------", "\n")
@@ -49,9 +54,9 @@ cat("--------------loop end--------------", "\n")
 gtf_df <- filter(gtf_df, source == "StringTie")
 gtf_df$source <- NULL
 gtf_df$phase <- NULL
-gtf_df$type <- NULL
+# gtf_df$type <- NULL
 gtf_df$gene_name <- NULL
 
 # save csv
 cat("-------------writing csv-------------", "\n")
-write.csv(gtf_df, file.path(path, paste0(output_name, ".csv")))
+write.table(gtf_df, file.path(path, output_csv), sep = ",", row.names = FALSE)

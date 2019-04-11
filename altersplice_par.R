@@ -1,12 +1,12 @@
 # package
 library(dplyr)
 library(tidyr)
+library(parallel)
 
 # functions
-AlterRatio <- function(input) {
+AlterRatio <- function(name) {
     # arrange
-    input <- filter(input, type == "transcript") 
-    data <- select(input, c("ref_gene_name", "transcript_id", starts_with("FPKM"), starts_with("TPM")))
+    data <- filter(input, ref_gene_name == name)
     data <- gather(data, c(3:ncol(data)), key = "sample", value = "value")
     data <- data[complete.cases(data$value),]
     data <- separate(data, "sample", c("type", "sex", "pop", "num"), sep = "_")
@@ -35,29 +35,18 @@ output_csv = "altersplice.csv"
 cat("------------loading file-------------", "\n")
 input = read.delim(file.path(path, imput_csv), sep = ",")
 
-# filtering
+# arrange
 input <- input[complete.cases(input$ref_gene_name),]
+input <- filter(input, type == "transcript")
+input <- select(input, c("ref_gene_name", "transcript_id", starts_with("FPKM"), starts_with("TPM")))
 
-# processing
+# 2 thread processing
 cat("-------------processing--------------", "\n")
-name_list <- unique(input$ref_gene_name)
-# j <- 0
-# k <- 0
-for (i in 1:length(name_list)) {
-    if (i == 1) {
-        output <- AlterRatio(filter(input, ref_gene_name == name_list[i]))
-    } else {
-        output <- rbind(output, AlterRatio(filter(input, ref_gene_name == name_list[i])))
-    }
-
-    # progress bar
-    # if ((j / length(name_list) * 100) %/% 1 == k) { 
-    #     cat("[", paste(rep("#", (32*k/100) %/% 1),collapse = ""), 
-    #     paste(rep("_", 32-(32*k/100) %/% 1),collapse = ""), k, "%]","\r", sep = "")
-    #     k <- k + 1
-    # }
-    # j <- j + 1
-}
+cl <- makeForkCluster(2)
+clusterExport(cl, "input")
+temp <- parLapply(cl, unique(input$ref_gene_name), AlterRatio)
+output <- do.call("rbind", temp)
+stopCluster(cl)
 
 # arrange
 output <- arrange(output, ref_gene_name, name, type, transcript_id)

@@ -1,4 +1,4 @@
-# alternative splices map
+# alternative splices map 
 AlterMap <- function(input) {
     alter <- GRanges(seqnames = input$chr,
                      ranges = IRanges(start = input$start, end = input$end),
@@ -39,4 +39,7 @@ AlterRatio <- function(input) {
     return(data)
 }
 
-# 
+# splice site frequency
+SiteFreq <- function(input) {
+    
+}
