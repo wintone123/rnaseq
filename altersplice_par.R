@@ -21,7 +21,7 @@ AlterRatio <- function(name) {
             sub_data <- data[data$name == name & data$type == type,]
             data[data$name == name & data$type == type,]$ratio <- sub_data$mean / sum(sub_data$mean)
         }
-    }
+    }   
       
     return(data)
 }
@@ -45,7 +45,7 @@ cat("-------------processing--------------", "\n")
 cl <- makeForkCluster(2)
 clusterExport(cl, "input")
 temp <- parLapply(cl, unique(input$ref_gene_name), AlterRatio)
-output <- do.call("rbind", temp)
+output <- Reduce("rbind", temp)
 stopCluster(cl)
 
 # arrange
